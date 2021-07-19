@@ -42,7 +42,7 @@ export default {
   mounted () {
     // this.init()
     this.init2()
-    this.handleClick()
+    // this.handleClick()
   },
   methods: {
     handleCamera (item) {
@@ -80,11 +80,24 @@ export default {
       //   INTERSECTED = null
       // }
     },
+    setHelp (light) {
+      const helper = new THREE.DirectionalLightHelper(light, 5)
+      this.scene.add(helper)
+    },
+    setBackground () {
+      // 创建一个纹理图片加载器加载图片
+      var textureLoader = new THREE.TextureLoader()
+      // 加载背景图片
+      var texture = textureLoader.load('/model/WechatIMG80.png')
+      // 纹理对象Texture赋值给场景对象的背景属性.background
+      this.scene.background = texture
+    },
     init2 () {
       const container = document.querySelector('#container')
       this.scene = new THREE.Scene()
-      this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 60, 100000)
-      new GLTFLoader().load('/model/3.gltf', (gltf) => {
+      // this.setBackground()
+      this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
+      new GLTFLoader().load('/model/test3.gltf', (gltf) => {
         this.cameras = gltf.cameras
         this.cameras.push({
           position: {
@@ -130,11 +143,12 @@ export default {
         antialias: true,
         alpha: true
       })
+      this.renderer.setClearAlpha(0.2)
       this.renderer.setSize(window.innerWidth, window.innerHeight)
       this.renderer.setClearColor(0xFFFFFF)
       this.renderer.setPixelRatio(window.devicePixelRatio)
-      this.renderer.gammaOutput = true
-      this.renderer.gammaFactor = 2.2
+      // this.renderer.gammaOutput = true
+      // this.renderer.gammaFactor = 2.2
 
       // const pmremGenerator = new THREE.PMREMGenerator(renderer)
       // pmremGenerator.compileEquirectangularShader()
@@ -142,12 +156,31 @@ export default {
       // pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
       // this.scene.environment = pmremGenerator
       container.appendChild(this.renderer.domElement)
-      this.scene.add(new THREE.AmbientLight(0xFFFFFF, 0.2)) // 环境光
-      // this.scene.add(new THREE.DirectionalLight(0xFFFFFF, 0.45))// 平行光
-      this.light = new THREE.DirectionalLight(0xffffff) // 从正上方（不是位置）照射过来的平行光，0.45的强度
-      // this.light.position.set(0, 0, -1000)
-      // this.light.position.multiplyScalar(0.3)
-      this.scene.add(this.light)
+      const ambientLight = new THREE.AmbientLight(0xFFFFFF, 0.5)
+
+      this.scene.add(ambientLight) // 环境光
+
+      // const light1 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
+      // light1.position.set(-7, -7, 6.3)
+      // this.scene.add(light1)
+      //
+      // const light2 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
+      // this.scene.add(light2)
+      const light = new THREE.DirectionalLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
+      // light.position.set(0, 100, 0)
+      // light.target.position.set(0, 0, 0)
+
+      const light2 = new THREE.HemisphereLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
+      // light2.position.set(0, 100, 0)
+      // light2.target.position.set(0, 0, 0)
+      this.setHelp(light)
+      this.scene.add(light)
+      this.scene.add(light2)
+      // this.scene.add(this.light.target)
+
+      // const lightPoint = new THREE.PointLight(0xE9E9E9, 0.9)
+      // this.scene.add(lightPoint)
+
       this.controls = new OrbitControls(this.camera, this.renderer.domElement)
       // controls.enableDamping = true
       // controls.enableRotate = true

@@ -9,14 +9,53 @@
             margin: 0;
             padding: 0;
         }
+        canvas { width: 100%; height: 100% }
     </style>
 </head>
 
 <body>
-<script src="http://ol95p1e06.bkt.clouddn.com/three.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/three.js/r128/three.js"></script>
-<script src="https://cdn.bootcdn.net/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="test.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" referrerpolicy="no-referrer"></script>
+<script>
+  var scene = new THREE.Scene();
+  var camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+
+  new THREE.GLTFLoader().load('./public/model/3.gltf',(gltf) => {
+    console.log('gltf: ', gltf)
+    scene.add(gltf.scene)
+  })
+  var renderer = new THREE.WebGLRenderer();
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  document.body.appendChild( renderer.domElement );
+
+  var geometry = new THREE.BoxGeometry( 1, 1, 1 );
+  var material = new THREE.MeshBasicMaterial( { color: 0x00ff00 } );
+  var cube = new THREE.Mesh( geometry, material );
+  scene.add( cube );
+  //创建并设置平行光
+  const directionalLight = new THREE.DirectionalLight(0xFFFFFF, 1)
+  directionalLight.position.set(0, 10, 0);
+  directionalLight.target.position.set(-5, 0, 0)
+
+  //将平行光添加到场景中
+  scene.add(directionalLight)
+  scene.add(directionalLight.target)
+
+  //根据平行光实例，创建对应的辅助对象，并将辅助对象添加到场景中
+  const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight)
+  scene.add(directionalLightHelper)
+
+
+  camera.position.z = 5;
+
+  function render() {
+    camera.position.x += 0.01
+    camera.position.y += 0.01
+    camera.position.z += 0.01
+    requestAnimationFrame( render );
+    renderer.render( scene, camera );
+  }
+  render();
+</script>
 </body>
 
 </html>
