@@ -4,6 +4,7 @@
       <span v-if="!isStart" class="text">加载中... {{ process }}</span>
       <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>
     </div>
+    <video style="width: 100%;display: none" :src="require('/public/model/1.mp4')" loop muted crossorigin="anonymous" playsinline id="video"></video>
     <div id="container" style="width:100%; height:100%"></div>
   </div>
 </template>
@@ -67,6 +68,7 @@ export default {
     init7211 () {
       const _this = this
       const scene = new THREE.Scene()
+      scene.environment = new THREE.Texture()
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
       camera.position.set(4000, 8000, -18000)
       const materialMap = new Map([
@@ -74,13 +76,13 @@ export default {
           color: new THREE.Color(0X35F5FF),
           emissive: new THREE.Color(0X35F5FF),
           opacity: 1,
-          texture: new THREE.TextureLoader().load(() => {
-            const element = document.createElement('video')
-            element.autoplay = true
-            element.src = 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
-            element.loop = true
-            return element
-          })
+          side: THREE.DoubleSide,
+          video: () => {
+            const videoElement = document.getElementById('video')
+            videoElement.play()
+            const videoTexture = new THREE.VideoTexture(videoElement)
+            return new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide })
+          }
         }
         ],
         ['平面1', {
@@ -103,30 +105,30 @@ export default {
         ['立方体15', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }]
       ])
       new GLTFLoader().load('/model/801.gltf', gltf => {
-        scene.add(gltf.scene)
         console.log('gltf: ', gltf)
         _this.loading = ''
         gltf.scene.traverse(function (child) {
           if (!child.isMesh) return
           const find = materialMap.get(child.name)
-          console.log('find: ', find)
-          // if (find) {
-          //   const material = child.material
-          //   material.opacity = find.opacity
-          //   material.color = find.color
-          //   material.emissive = find.emissive
-          //   if (find.texture) {
-          //     console.log('find: ', find)
-          //     console.log('child: ', child)
-          //     child.material = find.texture
-          //   }
-          //   if (find.video) {
-          //     child.material = new THREE.MeshBasicMaterial({
-          //       map: find.video
-          //     })
-          //   }
-          // }
+          // console.log('find: ', find)
+          // console.log('scene: ', scene)
+          // scene.environment =
+          if (find) {
+            const material = child.material
+            for (const findKey in find) {
+              material[findKey] = find[findKey]
+              material[findKey] = find[findKey]
+              material[findKey] = find[findKey]
+            }
+            if (find.texture) {
+              child.material = find.texture
+            }
+            if (find.video) {
+              child.material = find.video()
+            }
+          }
         })
+        scene.add(gltf.scene)
       }, e => {
         _this.process = ((e.loaded / e.total) * 100).toFixed(0) + '%'
       })
@@ -159,11 +161,10 @@ export default {
         { x: 0, y: -100000, z: 0 }
       ].map(({ x, y, z }) => {
         return createLight(x, y, z, 0xFFFFFF)
-      })
-
-      lights.map(light => {
+      }).map(light => {
         scene.add(light)
       })
+      console.log('lights: ', lights)
       // const light1 = createLight(0, 0, 25)
       // const light2 = createLight(9.625, 1.985, 4.262)
       // const light3 = createLight(-9.235, 1.022, 4.069)
