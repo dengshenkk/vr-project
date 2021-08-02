@@ -1,25 +1,10 @@
 <template>
   <div id="app" style="width:100%; height:100%">
-    {{ loading }}
-    <div class="camera">
-      <div class="x">{{ cameraPosition.x }}</div>
-      <div class="y">{{ cameraPosition.y }}</div>
-      <div class="z">{{ cameraPosition.z }}</div>
+    <div v-if="isLoading" class="loading">
+      <span v-if="!isStart" class="text">加载中... {{ process }}</span>
+      <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>
     </div>
-    <div style="position: absolute">
-      <input v-model="x" type="text">
-      <input v-model="y" type="text">
-      <input v-model="z" type="text">
-      <button @click="handleBtnClick">按钮</button>
-    </div>
-    <div class="this.camera" style="position: absolute; right: 0">
-      <span v-for="(item,index) of this.cameras" :key="index" @click="handleCamera(item)">{{ item.name }}</span>
-    </div>
-    <!--<div>-->
-    <!--  {{loading}}-->
-    <!--</div>-->
     <div id="container" style="width:100%; height:100%"></div>
-
   </div>
 </template>
 
@@ -48,7 +33,14 @@ export default {
         x: '',
         y: '',
         z: ''
-      }
+      },
+      process: '',
+      isLoading: true
+    }
+  },
+  computed: {
+    isStart () {
+      return this.process === '100%'
     }
   },
   mounted () {
@@ -58,6 +50,9 @@ export default {
     this.init7211()
   },
   methods: {
+    handleStart () {
+      this.isLoading = false
+    },
     start ({ scene, camera, renderer, controls }) {
       const animate = () => {
         controls.update()
@@ -75,25 +70,65 @@ export default {
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
       camera.position.set(4000, 8000, -18000)
       const materialMap = new Map([
-        ['立方体10', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }],
-        ['立方体11', { color: new THREE.Color(0XEE0AB8), emissive: new THREE.Color(0XEE0AB8), opacity: 1 }],
-        ['立方体12', { color: new THREE.Color(0XFFFF00), emissive: new THREE.Color(0XFFFF00), opacity: 1 }],
-        ['立方体13', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }]
+        ['立方体4', {
+          color: new THREE.Color(0X35F5FF),
+          emissive: new THREE.Color(0X35F5FF),
+          opacity: 1,
+          texture: new THREE.TextureLoader().load(() => {
+            const element = document.createElement('video')
+            element.autoplay = true
+            element.src = 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4'
+            element.loop = true
+            return element
+          })
+        }
+        ],
+        ['平面1', {
+          color: new THREE.Color(0XEE0AB8),
+          emissive: new THREE.Color(0XEE0AB8),
+          opacity: 1,
+          texture: new THREE.MeshBasicMaterial({
+            map: new THREE.TextureLoader().load('/model/feng.gif'),
+            opacity: 1,
+            side: THREE.DoubleSide
+          })
+          // texture: new THREE.TextureLoader().load('/model/1.mp4')
+          // texture: new THREE.TextureLoader().load(() => {
+          //   const element = document.createElement('img')
+          //   element.src = 'https://img-blog.csdnimg.cn/20190930104023919.gif'
+          //   return element
+          // })
+        }],
+        ['立方体14', { color: new THREE.Color(0XFFFF00), emissive: new THREE.Color(0XFFFF00), opacity: 1 }],
+        ['立方体15', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }]
       ])
-      new GLTFLoader().load('/model/7211.gltf', gltf => {
+      new GLTFLoader().load('/model/801.gltf', gltf => {
         scene.add(gltf.scene)
         console.log('gltf: ', gltf)
         _this.loading = ''
         gltf.scene.traverse(function (child) {
           if (!child.isMesh) return
           const find = materialMap.get(child.name)
-          if (find) {
-            const material = child.material
-            material.opacity = find.opacity
-            material.color = find.color
-            material.emissive = find.emissive
-          }
+          console.log('find: ', find)
+          // if (find) {
+          //   const material = child.material
+          //   material.opacity = find.opacity
+          //   material.color = find.color
+          //   material.emissive = find.emissive
+          //   if (find.texture) {
+          //     console.log('find: ', find)
+          //     console.log('child: ', child)
+          //     child.material = find.texture
+          //   }
+          //   if (find.video) {
+          //     child.material = new THREE.MeshBasicMaterial({
+          //       map: find.video
+          //     })
+          //   }
+          // }
         })
+      }, e => {
+        _this.process = ((e.loaded / e.total) * 100).toFixed(0) + '%'
       })
 
       const renderer = new THREE.WebGLRenderer({
@@ -101,29 +136,43 @@ export default {
         alpha: true
       })
       const controls = new OrbitControls(camera, renderer.domElement)
-      controls.enableRotate = true
-      controls.autoRotate = true
-      controls.autoRotateSpeed = 1
+      // controls.enableRotate = true
+      // controls.autoRotate = true
+      // controls.autoRotateSpeed = 1
       // 设置相机距离原点的最远距离
       controls.minDistance = 5000
       // 设置相机距离原点的最远距离
-      controls.maxDistance = 20000
+      controls.maxDistance = 50000
 
       function createLight (x, y, z, color) {
-        const pointLight = new THREE.PointLight(color, 1)
+        const pointLight = new THREE.DirectionalLight(color, 1)
         pointLight.position.set(x, y, z)
         return pointLight
       }
 
-      const light1 = createLight(19000, 11000, -19000)
-      const light2 = createLight(18000, 21000, 19000)
-      const light3 = createLight(-19000, 11000, -19000)
-      const light4 = createLight(-19000, 21000, 19000)
+      const lights = [
+        { x: 0, y: 100000, z: 0 },
+        { x: 10, y: 1.9, z: 4 },
+        { x: -10, y: 1.9, z: 4 },
+        { x: 3, y: 3, z: 3 },
+        { x: 0, y: 100000, z: 0 },
+        { x: 0, y: -100000, z: 0 }
+      ].map(({ x, y, z }) => {
+        return createLight(x, y, z, 0xFFFFFF)
+      })
 
-      scene.add(light1)
-      scene.add(light2)
-      scene.add(light3)
-      scene.add(light4)
+      lights.map(light => {
+        scene.add(light)
+      })
+      // const light1 = createLight(0, 0, 25)
+      // const light2 = createLight(9.625, 1.985, 4.262)
+      // const light3 = createLight(-9.235, 1.022, 4.069)
+      // const light4 = createLight(3.375, 3.266, 3.266)
+      //
+      // scene.add(light1)
+      // scene.add(light2)
+      // scene.add(light3)
+      // scene.add(light4)
       renderer.setClearAlpha(0.2)
       renderer.setSize(window.innerWidth, window.innerHeight)
       renderer.setClearColor(0xFFFFFF)
@@ -188,6 +237,9 @@ export default {
       renderer.domElement.addEventListener('click', e => {
         const intersects = getIntersects(e)[0]
         console.log('intersects: ', intersects.object)
+        // intersects.object.material.color = new THREE.Color(0X35F5FF)
+        // intersects.object.material.emissive = new THREE.Color(0X35F5FF)
+        // intersects.object.material.opacity = 1
         // const { y } = intersects.object.position
         // camera.position.y = y
         // setTimeout(() => {
@@ -379,14 +431,46 @@ export default {
 </script>
 
 <style lang="scss">
-*{
+* {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 html, body, #app {
   width: 100%;
   height: 100%;
 
+}
+
+.loading {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  color: white;
+
+  .text {
+    font-size: 24px;
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 4px 8px;
+    border: 1px solid white;
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+  }
 }
 </style>
