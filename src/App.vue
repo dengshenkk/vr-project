@@ -13,6 +13,7 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
 // import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 window.THREE = THREE
 export default {
@@ -147,23 +148,37 @@ export default {
       controls.maxDistance = 50000
 
       function createLight (x, y, z, color) {
-        const pointLight = new THREE.DirectionalLight(color, 1)
+        const pointLight = new THREE.PointLight(color, 1.5)
         pointLight.position.set(x, y, z)
         return pointLight
       }
 
       const lights = [
-        { x: 0, y: 100000, z: 0 },
-        { x: 10, y: 1.9, z: 4 },
-        { x: -10, y: 1.9, z: 4 },
-        { x: 3, y: 3, z: 3 },
-        { x: 0, y: 100000, z: 0 },
-        { x: 0, y: -100000, z: 0 }
+        // { x: 0, y: 100000, z: 0 },
+        // { x: 10, y: 1.9, z: 4 },
+        // { x: -10, y: 1.9, z: 4 },
+        // { x: 3, y: 3, z: 3 },
+        // { x: 0, y: 100000, z: 0 },
+        // { x: 0, y: -100000, z: 0 }
       ].map(({ x, y, z }) => {
         return createLight(x, y, z, 0xFFFFFF)
       }).map(light => {
         scene.add(light)
       })
+      const pmremGenerator = new THREE.PMREMGenerator(renderer)
+      const loader = new RGBELoader()
+      loader.setDataType(THREE.UnsignedByteType)
+      pmremGenerator.compileEquirectangularShader()
+      new RGBELoader().load('/model/2k.hdr', texture => {
+        const envMap = pmremGenerator.fromEquirectangular(texture).texture
+        console.log('envMap: ', envMap)
+        scene.environment = envMap
+        // one can also set scene.background to envMap here
+
+        texture.dispose()
+        pmremGenerator.dispose()
+      })
+      scene.add(new THREE.AmbientLight(0xffffff, 1).position.set(0, 55555, 0))
       console.log('lights: ', lights)
       // const light1 = createLight(0, 0, 25)
       // const light2 = createLight(9.625, 1.985, 4.262)
