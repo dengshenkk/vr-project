@@ -1,11 +1,29 @@
 <template>
   <div id="app" style="width:100%; height:100%">
-    <div v-if="isLoading" class="loading">
-      <span v-if="!isStart" class="text">加载中... {{ process }}</span>
-      <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>
+    <!--<div v-if="isLoading" class="loading">-->
+    <!--  <span v-if="!isStart" class="text">加载中... {{ process }}</span>-->
+    <!--  <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>-->
+    <!--</div>-->
+    <video src="./assets/start.mp4" playsinline crossorigin="anonymous" id="start" autoplay
+           style="width: 100%;" muted></video>
+    <video src="./assets/end.mp4" playsinline crossorigin="anonymous" id="end"
+           style="width: 100%;display: none"></video>
+    <div id="full" v-show="currentVideo">
+      <video v-show="currentVideo" id="videoBox" crossorigin="anonymous"
+             playsinline></video>
     </div>
-    <video style="width: 100%;display: none" :src="require('/public/model/1.mp4')" loop muted crossorigin="anonymous" playsinline id="video"></video>
-    <div id="container" style="width:100%; height:100%"></div>
+    <video
+      v-for="(item, index) of videos"
+      :key="index"
+      style="width: 100%;height: 100%; display: none"
+      :src="item.src"
+      loop
+      muted
+      crossorigin="anonymous"
+      playsinline
+      :id="item.id"
+    ></video>
+    <div id="container" style="width:100%; height:100%;display: none"></div>
   </div>
 </template>
 
@@ -13,19 +31,17 @@
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader'
 // import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 window.THREE = THREE
 export default {
   name: 'App',
-  components: {
-  },
+  components: {},
   data () {
     return {
       loading: '模型加载中...',
-      x: 4000,
-      y: 8000,
-      z: -18000,
+      x: 2222,
+      y: 13500,
+      z: -32000,
       renderer: null,
       controls: null,
       camera: null,
@@ -37,7 +53,35 @@ export default {
         z: ''
       },
       process: '',
-      isLoading: true
+      isLoading: true,
+      currentVideo: '',
+      videos: [
+        {
+          id: '立方体4',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/1.mp4')
+        },
+        {
+          id: '立方体14',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/1.mp4')
+        },
+        {
+          id: '立方体15',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/1.mp4')
+        },
+        {
+          id: '平面1',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/1.mp4')
+        },
+        {
+          id: '立方体8',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/end.mp4')
+        }
+      ]
     }
   },
   computed: {
@@ -49,13 +93,40 @@ export default {
     // this.init()
     // this.init2()
     // this.handleClick()
-    this.init7211()
+    this.$nextTick(() => {
+      this.enterStartVideo()
+      this.init7211()
+    })
   },
   methods: {
+    enterStartVideo () {
+      const element = document.querySelector('#start')
+      element.addEventListener('load', _ => {
+        element.play()
+        setTimeout(() => {
+          element.muted = false
+        }, 500)
+        document.body.addEventListener('click', _ => {
+          element.muted = false
+        })
+        document.body.addEventListener('touchend', _ => {
+          element.muted = false
+        })
+      })
+
+      element.addEventListener('ended', () => {
+        element.parentElement.removeChild(element)
+        document.querySelector('#container').style.display = 'block'
+      })
+    },
     handleStart () {
       this.isLoading = false
     },
     start ({ scene, camera, renderer, controls }) {
+      this.scene = scene
+      this.camera = camera
+      this.renderer = renderer
+      this.controls = controls
       const animate = () => {
         controls.update()
         requestAnimationFrame(animate)
@@ -70,69 +141,122 @@ export default {
       const _this = this
       const scene = new THREE.Scene()
       scene.environment = new THREE.Texture()
-      const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
-      camera.position.set(4000, 8000, -18000)
+      const camera = new THREE.PerspectiveCamera(
+        60,
+        window.innerWidth / window.innerHeight,
+        60,
+        100000
+      )
+      camera.position.set(this.x, this.y, this.z)
       const materialMap = new Map([
-        ['立方体4', {
-          color: new THREE.Color(0X35F5FF),
-          emissive: new THREE.Color(0X35F5FF),
-          opacity: 1,
-          side: THREE.DoubleSide,
-          video: () => {
-            const videoElement = document.getElementById('video')
-            videoElement.play()
-            const videoTexture = new THREE.VideoTexture(videoElement)
-            return new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide })
-          }
-        }
-        ],
-        ['平面1', {
-          color: new THREE.Color(0XEE0AB8),
-          emissive: new THREE.Color(0XEE0AB8),
-          opacity: 1,
-          texture: new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load('/model/feng.gif'),
+        [
+          '立方体4',
+          {
+            color: new THREE.Color(0x35f5ff),
+            emissive: new THREE.Color(0x35f5ff),
             opacity: 1,
-            side: THREE.DoubleSide
-          })
-          // texture: new THREE.TextureLoader().load('/model/1.mp4')
-          // texture: new THREE.TextureLoader().load(() => {
-          //   const element = document.createElement('img')
-          //   element.src = 'https://img-blog.csdnimg.cn/20190930104023919.gif'
-          //   return element
-          // })
-        }],
-        ['立方体14', { color: new THREE.Color(0XFFFF00), emissive: new THREE.Color(0XFFFF00), opacity: 1 }],
-        ['立方体15', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }]
-      ])
-      new GLTFLoader().load('/model/801.gltf', gltf => {
-        console.log('gltf: ', gltf)
-        _this.loading = ''
-        gltf.scene.traverse(function (child) {
-          if (!child.isMesh) return
-          const find = materialMap.get(child.name)
-          // console.log('find: ', find)
-          // console.log('scene: ', scene)
-          // scene.environment =
-          if (find) {
-            const material = child.material
-            for (const findKey in find) {
-              material[findKey] = find[findKey]
-              material[findKey] = find[findKey]
-              material[findKey] = find[findKey]
-            }
-            if (find.texture) {
-              child.material = find.texture
-            }
-            if (find.video) {
-              child.material = find.video()
+            side: THREE.DoubleSide,
+            video: () => {
+              const videoElement = document.getElementById('立方体4')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
             }
           }
-        })
-        scene.add(gltf.scene)
-      }, e => {
-        _this.process = ((e.loaded / e.total) * 100).toFixed(0) + '%'
-      })
+        ],
+        [
+          '平面1',
+          {
+            color: new THREE.Color(0xee0ab8),
+            emissive: new THREE.Color(0xee0ab8),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('平面1')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ],
+        [
+          '立方体14',
+          {
+            color: new THREE.Color(0xffff00),
+            emissive: new THREE.Color(0xffff00),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('立方体14')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ],
+        [
+          '立方体15',
+          {
+            color: new THREE.Color(0x35f5ff),
+            emissive: new THREE.Color(0x35f5ff),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('立方体15')
+              videoElement.addEventListener('load', e => {
+                e.play()
+              })
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ]
+      ])
+      new GLTFLoader().load(
+        '/model/801.gltf',
+        gltf => {
+          console.log('gltf: ', gltf)
+          _this.loading = ''
+          gltf.scene.traverse(function (child) {
+            if (!child.isMesh) return
+            const find = materialMap.get(child.name)
+            // console.log('find: ', find)
+            // console.log('scene: ', scene)
+            // scene.environment =
+            if (find) {
+              const material = child.material
+              for (const findKey in find) {
+                material[findKey] = find[findKey]
+                material[findKey] = find[findKey]
+                material[findKey] = find[findKey]
+              }
+              if (find.texture) {
+                child.material = find.texture
+              }
+              if (find.video) {
+                child.material = find.video()
+              }
+            }
+          })
+          scene.add(gltf.scene)
+        },
+        e => {
+          _this.process = ((e.loaded / e.total) * 100).toFixed(0) + '%'
+        }
+      )
 
       const renderer = new THREE.WebGLRenderer({
         antialias: true,
@@ -154,31 +278,63 @@ export default {
       }
 
       const lights = [
-        // { x: 0, y: 100000, z: 0 },
-        // { x: 10, y: 1.9, z: 4 },
-        // { x: -10, y: 1.9, z: 4 },
-        // { x: 3, y: 3, z: 3 },
-        // { x: 0, y: 100000, z: 0 },
-        // { x: 0, y: -100000, z: 0 }
-      ].map(({ x, y, z }) => {
-        return createLight(x, y, z, 0xFFFFFF)
-      }).map(light => {
-        scene.add(light)
+        {
+          x: 58800,
+          y: 46700,
+          z: -51000
+        },
+        {
+          x: -33900,
+          y: 33600,
+          z: 4348
+        },
+        {
+          x: -13000,
+          y: 16000,
+          z: 56000
+        }
+      ].map(({
+        x,
+        y,
+        z
+      }) => {
+        return createLight(x, y, z, 0xffffff)
       })
-      const pmremGenerator = new THREE.PMREMGenerator(renderer)
-      const loader = new RGBELoader()
-      loader.setDataType(THREE.UnsignedByteType)
-      pmremGenerator.compileEquirectangularShader()
-      new RGBELoader().load('/model/2k.hdr', texture => {
-        const envMap = pmremGenerator.fromEquirectangular(texture).texture
-        console.log('envMap: ', envMap)
-        scene.environment = envMap
-        // one can also set scene.background to envMap here
+        .map(light => {
+          scene.add(light)
+        })
 
-        texture.dispose()
-        pmremGenerator.dispose()
-      })
-      scene.add(new THREE.AmbientLight(0xffffff, 1).position.set(0, 55555, 0))
+      const directionalLight1 = new THREE.DirectionalLight(0xffffff, 5)
+      directionalLight1.position.set(744, -16000, 6400)
+      scene.add(directionalLight1)
+
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 2)
+      directionalLight2.position.set(-290, 28000, -1900)
+      scene.add(directionalLight1)
+      scene.add(directionalLight2)
+      // const water = new Water(renderer, camera, scene, {
+      //   textureWidth: 512,
+      //   textureHeight: 512,
+      //   waterNormals: new THREE.TextureLoader().load('/model/water.gif', texture => {
+      //     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+      //   }),
+      //   alpha: 1.0,
+      //   sunDirection: new THREE.Vector3(),
+      //   sunColor: 0xffffff,
+      //   waterColor: 0x001e0f,
+      //   distortionScale: 50.0,
+      //   fog: 1
+      // })
+
+      // const mirrorMesh = new THREE.Mesh(
+      //   new THREE.PlaneBufferGeometry(500, 500),
+      //   water.material
+      // )
+      //
+      // mirrorMesh.add(water)
+      // mirrorMesh.rotation.x = -Math.PI * 0.5
+      // scene.add(mirrorMesh)
+
       console.log('lights: ', lights)
       // const light1 = createLight(0, 0, 25)
       // const light2 = createLight(9.625, 1.985, 4.262)
@@ -195,11 +351,24 @@ export default {
       document.querySelector('#container').appendChild(renderer.domElement)
       this.setBackground({ scene })
       // this.helper({ scene, light1 })
-      this.start({ scene, camera, controls, renderer })
+      this.start({
+        scene,
+        camera,
+        controls,
+        renderer
+      })
       this.setMove({ camera })
-      this.handleClick({ renderer, scene, camera })
+      this.handleClick({
+        renderer,
+        scene,
+        camera,
+        controls
+      })
     },
-    helper ({ scene, light }) {
+    helper ({
+      scene,
+      light
+    }) {
       const helper = new THREE.PointLightHelper(light, 5)
       scene.add(helper)
     },
@@ -245,23 +414,49 @@ export default {
       this.camera.position.set(x, y, z)
     },
     handleBtnClick () {
-      const { x, y, z } = this
+      const {
+        x,
+        y,
+        z
+      } = this
       this.camera.position.set(x, y, z)
       this.camera.updateProjectionMatrix()
     },
-    handleClick ({ renderer, scene, camera }) {
+    handleClick ({
+      renderer,
+      scene,
+      controls,
+      camera
+    }) {
+      const _this = this
       renderer.domElement.addEventListener('click', e => {
         const intersects = getIntersects(e)[0]
-        console.log('intersects: ', intersects.object)
-        // intersects.object.material.color = new THREE.Color(0X35F5FF)
-        // intersects.object.material.emissive = new THREE.Color(0X35F5FF)
-        // intersects.object.material.opacity = 1
-        // const { y } = intersects.object.position
-        // camera.position.y = y
-        // setTimeout(() => {
-        //   alert(`点击了${intersects.object.name}`)
-        // }, 1000)
+        const find = this.videos.find(item => intersects.object.name === item.id)
+        if (find) {
+          playVideo(find)
+          return
+        }
+        if (intersects.name === '挤压5_1') {
+          // 地面
+          // const { x, y, z } = intersects.point
+          camera.position.z += 0.1
+          camera.updateProjectionMatrix()
+          camera.lookAt()
+        }
+        console.log('intersects: ', intersects)
       })
+
+      function playVideo (find) {
+        console.log('find: ', find)
+        const element = document.querySelector('#videoBox')
+        // element.src = '//commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+        element.src = find.src
+        _this.currentVideo = find
+        element.play()
+        element.addEventListener('ended', e => {
+          _this.currentVideo = null
+        })
+      }
 
       function getIntersects (event) {
         event.preventDefault()
@@ -318,129 +513,6 @@ export default {
       var texture = textureLoader.load('/model/WechatIMG80.png')
       // 纹理对象Texture赋值给场景对象的背景属性.background
       scene.background = texture
-    },
-    init2 () {
-      const container = document.querySelector('#container')
-      this.scene = new THREE.Scene()
-      // this.setBackground()
-      this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
-      new GLTFLoader().load('/model/7211.gltf', (gltf) => {
-        this.cameras = gltf.cameras
-        this.cameras.push({
-          position: {
-            x: -289.57681274414097,
-            y: 855.6245117187495,
-            z: -882
-          },
-          name: '自定义'
-        })
-        gltf.scene.traverse(function (child) {
-          if (child.isMesh) {
-            if (child.name === '圆盘') {
-              // if (!child.material.map) {
-              //   child.material.map = {}
-              //   child.material.map.encoding = sRGBEncoding
-              // }
-              // if (!child.material.emissiveMap) {
-              //   child.material.emissiveMap = {}
-              //   child.material.emissiveMap.encoding = sRGBEncoding
-              // }
-              // child.material.needsUpdate = true
-              // var phongMaterial = new THREE.MeshPhongMaterial()
-              // child.material = phongMaterial
-              // child.material.side = THREE.DoubleSide
-              // child.material.envMap = new THREE.TextureLoader().load('/model/DuckCM.png')
-              // child.material.envMap.mapping = THREE.EquirectangularReflectionMapping
-              // child.material.envMap.envMapIntensity = 0.6
-            }
-            // child.material.emissive = child.material.color
-            // child.material.emissiveMap = child.material.map
-          }
-        })
-
-        this.scene.add(gltf.scene)
-        console.log('gltf模型加载成功: ', gltf)
-        // console.log('gltf对象场景属性', gltf.scene)
-        // console.log('gltf对象相机属性', gltf.cameras)
-      }, undefined, function (error) {
-        console.error(error)
-      })
-
-      this.renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: true
-      })
-      this.renderer.setClearAlpha(0.2)
-      this.renderer.setSize(window.innerWidth, window.innerHeight)
-      this.renderer.setClearColor(0xFFFFFF)
-      // this.renderer.setPixelRatio(window.devicePixelRatio)
-      // this.renderer.gammaOutput = true
-      // this.renderer.gammaFactor = 2.2
-
-      // const pmremGenerator = new THREE.PMREMGenerator(renderer)
-      // pmremGenerator.compileEquirectangularShader()
-      // // eslint-disable-next-line no-unused-expressions
-      // pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
-      // this.scene.environment = pmremGenerator
-      container.appendChild(this.renderer.domElement)
-      // const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1)
-
-      // this.scene.add(ambientLight) // 环境光
-
-      // const light1 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
-      // light1.position.set(-7, -7, 6.3)
-      // this.scene.add(light1)
-      //
-      // const light2 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
-      // this.scene.add(light2)
-      const light = new THREE.DirectionalLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
-      light.position.set(-1, 2, 4)
-      // light.target.position.set(0, 0, 0)
-
-      // const light2 = new THREE.HemisphereLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
-      // light2.position.set(0, 100, 0)
-      // light2.target.position.set(0, 0, 0)
-      this.setHelp(light)
-      this.scene.add(light)
-      // this.scene.add(light2)
-      // this.scene.add(this.light.target)
-
-      // const lightPoint = new THREE.PointLight(0xE9E9E9, 0.9)
-      // this.scene.add(lightPoint)
-
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-      // controls.enableDamping = true
-      // controls.enableRotate = true
-      // controls.autoRotate = true
-      // controls.rotateSpeed = 1
-      const {
-        x,
-        y,
-        z
-      } = this
-      this.camera.position.set(x, y, z)
-
-      // this.$refs.btn.addEventListener('click', e => {
-      //   console.log('this.camera: ', this.camera)
-      //   const {
-      //     x,
-      //     y,
-      //     z
-      //   } = this
-      //   // this.camera.fov = 10
-      //   this.camera.position.x = x
-      //   this.camera.position.y = y
-      //   this.camera.position.z = z
-      //   console.log('this.camera.fov: ', this.camera.fov)
-      //   this.camera.updateProjectionMatrix()
-      // })
-
-      const animate = () => {
-        this.controls.update()
-        requestAnimationFrame(animate)
-        this.renderer.render(this.scene, this.camera)
-      }
-      animate()
     }
   }
 }
@@ -487,6 +559,24 @@ html, body, #app {
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
+  }
+}
+
+#full {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  video {
+    width: 100%;
   }
 }
 </style>
