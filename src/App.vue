@@ -4,9 +4,9 @@
     <!--  <span v-if="!isStart" class="text">加载中... {{ process }}</span>-->
     <!--  <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>-->
     <!--</div>-->
-    <video id="start" crossorigin="anonymous" muted playsinline
-           src="./assets/start.mp4" style="width: 100%;display: none;"></video>
-    <video id="end" crossorigin="anonymous" playsinline src="./assets/end.mp4"
+    <video id="start" autoplay crossorigin="anonymous" muted playsinline
+           src="//cdn.haijinsha.top/start.mp4" style="width: 100%;"></video>
+    <video id="end" crossorigin="anonymous" playsinline src="//cdn.haijinsha.top/end.mp4"
            style="width: 100%;display: none"></video>
     <div v-show="currentVideo" id="full">
       <video v-show="currentVideo" id="videoBox" crossorigin="anonymous"
@@ -24,7 +24,7 @@
       preload="auto"
       style="width: 100%;height: 100%; display: none"
     ></video>
-    <div id="container" style="width:100%; height:100%;"></div>
+    <div id="container" style="width:100%; height:100%;display: none"></div>
   </div>
 </template>
 
@@ -62,30 +62,35 @@ export default {
           id: '立方体4',
           name: 'fun',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/fun.mp4')
+          src: '//cdn.haijinsha.top/fun.mp4',
+          fullSrc: ''
         },
         {
           id: '立方体14',
           name: 'art',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/art.mp4')
+          src: '//cdn.haijinsha.top/art.mp4',
+          fullSrc: ''
         },
         {
           id: '立方体15',
           name: '4c',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/4c.mp4')
+          src: '//cdn.haijinsha.top/4c.mp4',
+          fullSrc: ''
         },
         {
           id: '平面1',
           name: 'creation',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/creation.mp4')
+          src: '//cdn.haijinsha.top/creation.mp4',
+          fullSrc: ''
         },
         {
           id: '立方体8',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/end.mp4')
+          src: '//cdn.haijinsha.top/end.mp4',
+          fullSrc: ''
         }
       ]
     }
@@ -100,10 +105,10 @@ export default {
     // this.init2()
     // this.handleClick()
     this.$nextTick(() => {
-      // this.enterStartVideo()
+      this.enterStartVideo()
       setTimeout(() => {
         this.init7211()
-      }, 1000)
+      }, 10)
     })
   },
   methods: {
@@ -151,7 +156,7 @@ export default {
       const scene = new THREE.Scene()
       scene.environment = new THREE.Texture()
       const camera = new THREE.PerspectiveCamera(
-        60,
+        50,
         window.innerWidth / window.innerHeight,
         0.1,
         100000
@@ -237,11 +242,11 @@ export default {
         ]
       ])
       new GLTFLoader().load(
-        '/model/801.gltf',
+        '//cdn.haijinsha.top/801.gltf',
         gltf => {
           console.log('gltf: ', gltf)
           _this.loading = ''
-          gltf.scene.traverse(function (child) {
+          gltf.scene.traverse(function (child){
             if (!child.isMesh) return
             const find = materialMap.get(child.name)
             // console.log('find: ', find)
@@ -512,7 +517,7 @@ export default {
         console.log('find: ', find)
         const element = document.querySelector('#videoBox')
         // element.src = '//commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
-        element.src = find.src
+        element.src = find.fullSrc || find.src
         _this.currentVideo = find
         element.play()
         element.addEventListener('ended', e => {
@@ -572,7 +577,7 @@ export default {
       // 创建一个纹理图片加载器加载图片
       var textureLoader = new THREE.TextureLoader()
       // 加载背景图片
-      var texture = textureLoader.load('/model/WechatIMG80.png')
+      var texture = textureLoader.load('//cdn.haijinsha.top/sceneBG.jpg')
       // 纹理对象Texture赋值给场景对象的背景属性.background
       scene.background = texture
     }
