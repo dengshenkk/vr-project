@@ -4,25 +4,32 @@
     <!--  <span v-if="!isStart" class="text">加载中... {{ process }}</span>-->
     <!--  <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>-->
     <!--</div>-->
-    <video id="start" autoplay crossorigin="anonymous" muted playsinline
-           src="//cdn.haijinsha.top/start.mp4" style="width: 100%;display: none"></video>
-    <video id="end" crossorigin="anonymous" playsinline src="//cdn.haijinsha.top/end.mp4"
-           style="width: 100%;display: none"></video>
-    <div v-show="currentVideo" id="full">
+    <!--<h1 @click="handleClickVideo" v-if="!isPlay" class="enterBtn">点击进入</h1>-->
+
+    <video id="start" muted playsinline
+           ref="start"
+           @click="handleClickVideo"
+           src="./assets/start.mp4" style="width: 100vw;"
+           x5-video-player-type="h5"
+           x5-video-player-fullscreen="true"
+    ></video>
+    <video id="end" crossorigin="anonymous" playsinline src="./assets/end.mp4"
+           style="width: 100vw;display: none"></video>
+    <div id="full" v-show="currentVideo">
       <video v-show="currentVideo" id="videoBox" crossorigin="anonymous"
              playsinline></video>
     </div>
-    <video
-      v-for="(item, index) of videos"
-      :id="item.id"
-      :key="index"
-      :src="item.src"
-      crossorigin="anonymous"
-      loop
-      muted
-      playsinline
-      style="width: 100%;height: 100%; display: none"
-    ></video>
+    <!--<video-->
+    <!--  v-for="(item, index) of videos"-->
+    <!--  :id="item.id"-->
+    <!--  :key="index"-->
+    <!--  :src="item.src"-->
+    <!--  crossorigin="anonymous"-->
+    <!--  loop-->
+    <!--  muted-->
+    <!--  playsinline-->
+    <!--  style="width: 100%;height: 100%; display: none"-->
+    <!--&gt;</video>-->
     <div id="container" style="width:100%; height:100%;display: none"></div>
   </div>
 </template>
@@ -55,6 +62,7 @@ export default {
       },
       process: '',
       isLoading: true,
+      isPlay: false,
       currentVideo: '',
       videos: [
         {
@@ -114,22 +122,34 @@ export default {
         signature: '',
         jsApiList: []
       })
-      window.wx.ready(() => {
-        this.videos.forEach(item => {
-          document.querySelector(`#${item.id}`).play()
-        })
-      })
       setTimeout(() => {
         this.init7211()
       }, 10)
     })
   },
   methods: {
+    handleClickVideo () {
+      this.isPlay = true
+      this.$refs.start.play()
+      const element = this.$refs.start
+      console.log('element: ', element)
+      element.addEventListener('ended', () => {
+        console.log('手动 进场动画播放完成')
+        element.style.display = 'none'
+        element.parentElement.removeChild(element)
+        document.querySelector('#container').style.display = 'block'
+      })
+    },
     enterStartVideo () {
       const element = document.querySelector('#start')
       element.style.display = 'block'
+      element.play()
+      document.addEventListener('WeixinJSBridgeReady', function () {
+        element.play()
+      }, false)
       element.addEventListener('load', _ => {
         element.play()
+        this.isPlay = true
         setTimeout(() => {
           element.muted = false
         }, 500)
@@ -140,8 +160,11 @@ export default {
           element.muted = false
         })
       })
+      window.element = element
 
       element.addEventListener('ended', () => {
+        console.log('进场动画播放完成')
+        element.style.display = 'none'
         element.parentElement.removeChild(element)
         document.querySelector('#container').style.display = 'block'
       })
@@ -176,8 +199,8 @@ export default {
         [
           '立方体4',
           {
-            color: new THREE.Color(0x35f5ff),
-            emissive: new THREE.Color(0x35f5ff),
+            color: new THREE.Color(0x00ffff),
+            emissive: new THREE.Color(0x00ffff),
             opacity: 1,
             side: THREE.DoubleSide,
             video: () => {
@@ -195,8 +218,8 @@ export default {
         [
           '平面1',
           {
-            color: new THREE.Color(0xee0ab8),
-            emissive: new THREE.Color(0xee0ab8),
+            color: new THREE.Color(0xff00c0),
+            emissive: new THREE.Color(0xff00c0),
             opacity: 1,
             video: () => {
               const videoElement = document.getElementById('平面1')
@@ -213,8 +236,8 @@ export default {
         [
           '立方体14',
           {
-            color: new THREE.Color(0xffff00),
-            emissive: new THREE.Color(0xffff00),
+            color: new THREE.Color(0x0097ff),
+            emissive: new THREE.Color(0x0097ff),
             opacity: 1,
             video: () => {
               const videoElement = document.getElementById('立方体14')
@@ -231,8 +254,8 @@ export default {
         [
           '立方体15',
           {
-            color: new THREE.Color(0x35f5ff),
-            emissive: new THREE.Color(0x35f5ff),
+            color: new THREE.Color(0xfbf000),
+            emissive: new THREE.Color(0xfbf000),
             opacity: 1,
             video: () => {
               const videoElement = document.getElementById('立方体15')
@@ -247,28 +270,35 @@ export default {
           }
         ]
       ])
+      const qiuTexture = new THREE.TextureLoader().load('/model/qiu.png')
       new GLTFLoader().load('/model/801.gltf', gltf => {
         console.log('gltf: ', gltf)
-        _this.loading = ''
+        // _this.loading = ''
         gltf.scene.traverse(function (child) {
           if (!child.isMesh) return
+          if (child.material.name === 'qiu') {
+            child.material.color = new THREE.Color(0xffffff)
+            child.material.emissive = new THREE.Color(0x000000)
+            child.material.opacity = 0.33
+            child.material.map = qiuTexture
+          }
           const find = materialMap.get(child.name)
-          // console.log('find: ', find)
-          // console.log('scene: ', scene)
-          // scene.environment =
           if (find) {
             const material = child.material
             for (const findKey in find) {
               material[findKey] = find[findKey]
             }
-            if (find.video) {
-              child.material = find.video()
-            }
+            // if (find.video) {
+            // child.material = find.video()
+            // }
           }
         })
         scene.add(gltf.scene)
+        this.setBackground({ scene })
       }, e => {
         _this.process = ((e.loaded / e.total) * 100).toFixed(0) + '%'
+      }, error => {
+        console.log('error: ', error)
       })
 
       const renderer = new THREE.WebGLRenderer({
@@ -364,7 +394,6 @@ export default {
       renderer.setSize(window.innerWidth, window.innerHeight)
       renderer.setClearColor(0xFFFFFF)
       document.querySelector('#container').appendChild(renderer.domElement)
-      // this.setBackground({ scene })
       // this.helper({ scene, light1 })
       this.start({ scene, camera, controls, renderer })
       this.setMove({ camera })
@@ -549,7 +578,7 @@ export default {
       // 创建一个纹理图片加载器加载图片
       var textureLoader = new THREE.TextureLoader()
       // 加载背景图片
-      var texture = textureLoader.load('/model/WechatIMG80.png')
+      var texture = textureLoader.load('/model/scencBGI.png')
       // 纹理对象Texture赋值给场景对象的背景属性.background
       scene.background = texture
     }
