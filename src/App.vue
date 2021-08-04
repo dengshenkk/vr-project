@@ -4,31 +4,33 @@
     <!--  <span v-if="!isStart" class="text">加载中... {{ process }}</span>-->
     <!--  <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>-->
     <!--</div>-->
-    <video src="./assets/start.mp4" playsinline crossorigin="anonymous" id="start" autoplay
-           style="width: 100%;" muted></video>
-    <video src="./assets/end.mp4" playsinline crossorigin="anonymous" id="end"
+    <video id="start" crossorigin="anonymous" muted playsinline
+           src="./assets/start.mp4" style="width: 100%;display: none;"></video>
+    <video id="end" crossorigin="anonymous" playsinline src="./assets/end.mp4"
            style="width: 100%;display: none"></video>
-    <div id="full" v-show="currentVideo">
+    <div v-show="currentVideo" id="full">
       <video v-show="currentVideo" id="videoBox" crossorigin="anonymous"
              playsinline></video>
     </div>
     <video
       v-for="(item, index) of videos"
+      :id="item.id"
       :key="index"
-      style="width: 100%;height: 100%; display: none"
       :src="item.src"
+      crossorigin="anonymous"
       loop
       muted
-      crossorigin="anonymous"
       playsinline
-      :id="item.id"
+      preload="auto"
+      style="width: 100%;height: 100%; display: none"
     ></video>
-    <div id="container" style="width:100%; height:100%;display: none"></div>
+    <div id="container" style="width:100%; height:100%;"></div>
   </div>
 </template>
 
 <script>
 import * as THREE from 'three'
+import TWEEN from 'tween'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 // import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
@@ -58,23 +60,27 @@ export default {
       videos: [
         {
           id: '立方体4',
+          name: 'fun',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/1.mp4')
+          src: require('./assets/fun.mp4')
         },
         {
           id: '立方体14',
+          name: 'art',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/1.mp4')
+          src: require('./assets/art.mp4')
         },
         {
           id: '立方体15',
+          name: '4c',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/1.mp4')
+          src: require('./assets/4c.mp4')
         },
         {
           id: '平面1',
+          name: 'creation',
           // eslint-disable-next-line import/no-absolute-path
-          src: require('./assets/1.mp4')
+          src: require('./assets/creation.mp4')
         },
         {
           id: '立方体8',
@@ -94,8 +100,10 @@ export default {
     // this.init2()
     // this.handleClick()
     this.$nextTick(() => {
-      this.enterStartVideo()
-      this.init7211()
+      // this.enterStartVideo()
+      setTimeout(() => {
+        this.init7211()
+      }, 1000)
     })
   },
   methods: {
@@ -131,6 +139,7 @@ export default {
         controls.update()
         requestAnimationFrame(animate)
         renderer.render(scene, camera)
+        TWEEN.update()
         this.cameraPosition.x = parseInt(camera.position.x)
         this.cameraPosition.y = parseInt(camera.position.y)
         this.cameraPosition.z = parseInt(camera.position.z)
@@ -144,7 +153,7 @@ export default {
       const camera = new THREE.PerspectiveCamera(
         60,
         window.innerWidth / window.innerHeight,
-        60,
+        0.1,
         100000
       )
       camera.position.set(this.x, this.y, this.z)
@@ -160,6 +169,7 @@ export default {
               const videoElement = document.getElementById('立方体4')
               videoElement.play()
               const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.needsUpdate = true
               videoTexture.flipY = false
               return new THREE.MeshBasicMaterial({
                 map: videoTexture,
@@ -179,6 +189,7 @@ export default {
               videoElement.play()
               const videoTexture = new THREE.VideoTexture(videoElement)
               videoTexture.flipY = false
+              videoTexture.needsUpdate = true
               return new THREE.MeshBasicMaterial({
                 map: videoTexture,
                 side: THREE.DoubleSide
@@ -196,6 +207,7 @@ export default {
               const videoElement = document.getElementById('立方体14')
               videoElement.play()
               const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.needsUpdate = true
               videoTexture.flipY = false
               return new THREE.MeshBasicMaterial({
                 map: videoTexture,
@@ -212,10 +224,9 @@ export default {
             opacity: 1,
             video: () => {
               const videoElement = document.getElementById('立方体15')
-              videoElement.addEventListener('load', e => {
-                e.play()
-              })
+              videoElement.play()
               const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.needsUpdate = true
               videoTexture.flipY = false
               return new THREE.MeshBasicMaterial({
                 map: videoTexture,
@@ -243,9 +254,7 @@ export default {
                 material[findKey] = find[findKey]
                 material[findKey] = find[findKey]
               }
-              if (find.texture) {
-                child.material = find.texture
-              }
+
               if (find.video) {
                 child.material = find.video()
               }
@@ -267,9 +276,11 @@ export default {
       // controls.autoRotate = true
       // controls.autoRotateSpeed = 1
       // 设置相机距离原点的最远距离
-      controls.minDistance = 5000
+      controls.minDistance = 1
       // 设置相机距离原点的最远距离
-      controls.maxDistance = 50000
+      controls.maxDistance = 60000
+      controls.minPolarAngle = 0
+      controls.maxPolarAngle = 1.2
 
       function createLight (x, y, z, color) {
         const pointLight = new THREE.PointLight(color, 1.5)
@@ -432,16 +443,67 @@ export default {
       renderer.domElement.addEventListener('click', e => {
         const intersects = getIntersects(e)[0]
         const find = this.videos.find(item => intersects.object.name === item.id)
+        console.log('点击了', intersects.object.name, intersects)
         if (find) {
           playVideo(find)
           return
         }
-        if (intersects.name === '挤压5_1') {
+        if (intersects.object.name === '挤压5_1') {
           // 地面
-          // const { x, y, z } = intersects.point
-          camera.position.z += 0.1
-          camera.updateProjectionMatrix()
-          camera.lookAt()
+          const { x, y, z } = intersects.point
+          console.log('camera.position: ', camera.position.y, x, y, z)
+          const curPosition = this.camera.position
+          const controlsTar = this.controls.target
+          const option = {
+            position: [x + 100, y, z + 100],
+            controls: [x, y, z],
+            duration: 2500,
+            easing: TWEEN.Easing.Cubic.In
+          }
+          option.position = option.position || [curPosition.x, curPosition.y, curPosition.z] // 相机新的位置
+          option.controls = option.controls || [controlsTar.x, controlsTar.y, controlsTar.z] // 控制器新的中心点位置(围绕此点旋转等)
+          option.duration = option.duration || 1000 // 飞行时间
+          option.easing = option.easing || TWEEN.Easing.Linear.None
+          const tween = new TWEEN.Tween({
+            number: 0,
+            x1: curPosition.x, // 相机当前位置x
+            y1: curPosition.y, // 相机当前位置y
+            z1: curPosition.z, // 相机当前位置z
+            x2: controlsTar.x, // 控制当前的中心点x
+            y2: controlsTar.y, // 控制当前的中心点y
+            z2: controlsTar.z // 控制当前的中心点z
+          }).to({
+            number: 1, // 用于 0 - 1 之间取值
+            x1: option.position[0], // 新的相机位置x
+            y1: option.position[1], // 新的相机位置y
+            z1: option.position[2], // 新的相机位置z
+            x2: option.controls[0], // 新的控制中心点位置x
+            y2: option.controls[1], // 新的控制中心点位置x
+            z2: option.controls[2] // 新的控制中心点位置x
+          }, option.duration).easing(option.easing) // TWEEN.Easing.Cubic.InOut //匀速
+          tween.onStart(() => {
+            this.controls.enabled = false
+            console.log('start')
+            // if (option.start instanceof Function) { option.start(tween._object); }
+          })
+          tween.onUpdate(e => {
+            this.controls.enabled = false
+            const x1 = (option.position[0] - curPosition.x) * e + curPosition.x
+            const y1 = (option.position[1] - curPosition.y) * e + curPosition.y
+            const z1 = (option.position[2] - curPosition.z) * e + curPosition.z
+            const x2 = (option.controls[0] - controlsTar.x) * e + controlsTar.x
+            const y2 = (option.controls[1] - controlsTar.y) * e + controlsTar.y
+            const z2 = (option.controls[2] - controlsTar.z) * e
+            this.camera.position.set(x1, y1, z1)
+            this.controls.target.set(x2, y2, z2)
+            this.controls.update()
+          })
+          tween.onComplete(() => {
+            this.controls.enabled = true
+          })
+          console.log('tween: ', tween.start())
+          tween.start()
+          return tween
         }
         console.log('intersects: ', intersects)
       })
