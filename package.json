@@ -10,6 +10,8 @@
   "dependencies": {
     "core-js": "^3.6.5",
     "three": "^0.130.1",
+    "tween": "^0.9.0",
+    "vconsole": "^3.9.1",
     "vue": "^2.6.11"
   },
   "devDependencies": {

@@ -1,30 +1,48 @@
 <template>
   <div id="app" style="width:100%; height:100%">
-    <div v-if="isLoading" class="loading">
-      <span v-if="!isStart" class="text">加载中... {{ process }}</span>
-      <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>
+    <!--<div v-if="isLoading" class="loading">-->
+    <!--  <span v-if="!isStart" class="text">加载中... {{ process }}</span>-->
+    <!--  <div v-show="isStart" class="btn" @click="handleStart">点击开始</div>-->
+    <!--</div>-->
+    <video id="start" autoplay crossorigin="anonymous" muted playsinline
+           src="//cdn.haijinsha.top/start.mp4" style="width: 100%;display: none"></video>
+    <video id="end" crossorigin="anonymous" playsinline src="//cdn.haijinsha.top/end.mp4"
+           style="width: 100%;display: none"></video>
+    <div v-show="currentVideo" id="full">
+      <video v-show="currentVideo" id="videoBox" crossorigin="anonymous"
+             playsinline></video>
     </div>
-    <video style="width: 100%;display: none" :src="require('/public/model/1.mp4')" loop muted crossorigin="anonymous" playsinline id="video"></video>
-    <div id="container" style="width:100%; height:100%"></div>
+    <video
+      v-for="(item, index) of videos"
+      :id="item.id"
+      :key="index"
+      :src="item.src"
+      crossorigin="anonymous"
+      loop
+      muted
+      playsinline
+      style="width: 100%;height: 100%; display: none"
+    ></video>
+    <div id="container" style="width:100%; height:100%;display: none"></div>
   </div>
 </template>
 
 <script>
 import * as THREE from 'three'
+import TWEEN from 'tween'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 // import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 window.THREE = THREE
 export default {
   name: 'App',
-  components: {
-  },
+  components: {},
   data () {
     return {
       loading: '模型加载中...',
-      x: 4000,
-      y: 8000,
-      z: -18000,
+      x: 10000,
+      y: 3456,
+      z: -25000,
       renderer: null,
       controls: null,
       camera: null,
@@ -36,7 +54,44 @@ export default {
         z: ''
       },
       process: '',
-      isLoading: true
+      isLoading: true,
+      currentVideo: '',
+      videos: [
+        {
+          id: '立方体4',
+          name: 'fun',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/fun.mp4'),
+          fullSrc: ''
+        },
+        {
+          id: '立方体14',
+          name: 'art',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/art.mp4'),
+          fullSrc: ''
+        },
+        {
+          id: '立方体15',
+          name: '4c',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/4c.mp4'),
+          fullSrc: ''
+        },
+        {
+          id: '平面1',
+          name: 'creation',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/creation.mp4'),
+          fullSrc: ''
+        },
+        {
+          id: '立方体8',
+          // eslint-disable-next-line import/no-absolute-path
+          src: require('./assets/end.mp4'),
+          fullSrc: ''
+        }
+      ]
     }
   },
   computed: {
@@ -48,17 +103,62 @@ export default {
     // this.init()
     // this.init2()
     // this.handleClick()
-    this.init7211()
+    this.$nextTick(() => {
+      this.enterStartVideo()
+      window.wx.config({
+        // 配置信息, 即使不正确也能使用 wx.ready
+        debug: false,
+        appId: 'gh_1a8c118653f8',
+        timestamp: 1,
+        nonceStr: '',
+        signature: '',
+        jsApiList: []
+      })
+      window.wx.ready(() => {
+        this.videos.forEach(item => {
+          document.querySelector(`#${item.id}`).play()
+        })
+      })
+      setTimeout(() => {
+        this.init7211()
+      }, 10)
+    })
   },
   methods: {
+    enterStartVideo () {
+      const element = document.querySelector('#start')
+      element.style.display = 'block'
+      element.addEventListener('load', _ => {
+        element.play()
+        setTimeout(() => {
+          element.muted = false
+        }, 500)
+        document.body.addEventListener('click', _ => {
+          element.muted = false
+        })
+        document.body.addEventListener('touchend', _ => {
+          element.muted = false
+        })
+      })
+
+      element.addEventListener('ended', () => {
+        element.parentElement.removeChild(element)
+        document.querySelector('#container').style.display = 'block'
+      })
+    },
     handleStart () {
       this.isLoading = false
     },
     start ({ scene, camera, renderer, controls }) {
+      this.scene = scene
+      this.camera = camera
+      this.renderer = renderer
+      this.controls = controls
       const animate = () => {
         controls.update()
         requestAnimationFrame(animate)
         renderer.render(scene, camera)
+        TWEEN.update()
         this.cameraPosition.x = parseInt(camera.position.x)
         this.cameraPosition.y = parseInt(camera.position.y)
         this.cameraPosition.z = parseInt(camera.position.z)
@@ -66,43 +166,86 @@ export default {
       requestAnimationFrame(animate)
     },
     init7211 () {
+      document.querySelector('#container').style.display = 'block'
       const _this = this
       const scene = new THREE.Scene()
       scene.environment = new THREE.Texture()
       const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
       camera.position.set(4000, 8000, -18000)
       const materialMap = new Map([
-        ['立方体4', {
-          color: new THREE.Color(0X35F5FF),
-          emissive: new THREE.Color(0X35F5FF),
-          opacity: 1,
-          side: THREE.DoubleSide,
-          video: () => {
-            const videoElement = document.getElementById('video')
-            videoElement.play()
-            const videoTexture = new THREE.VideoTexture(videoElement)
-            return new THREE.MeshBasicMaterial({ map: videoTexture, side: THREE.DoubleSide })
-          }
-        }
-        ],
-        ['平面1', {
-          color: new THREE.Color(0XEE0AB8),
-          emissive: new THREE.Color(0XEE0AB8),
-          opacity: 1,
-          texture: new THREE.MeshBasicMaterial({
-            map: new THREE.TextureLoader().load('/model/feng.gif'),
+        [
+          '立方体4',
+          {
+            color: new THREE.Color(0x35f5ff),
+            emissive: new THREE.Color(0x35f5ff),
             opacity: 1,
-            side: THREE.DoubleSide
-          })
-          // texture: new THREE.TextureLoader().load('/model/1.mp4')
-          // texture: new THREE.TextureLoader().load(() => {
-          //   const element = document.createElement('img')
-          //   element.src = 'https://img-blog.csdnimg.cn/20190930104023919.gif'
-          //   return element
-          // })
-        }],
-        ['立方体14', { color: new THREE.Color(0XFFFF00), emissive: new THREE.Color(0XFFFF00), opacity: 1 }],
-        ['立方体15', { color: new THREE.Color(0X35F5FF), emissive: new THREE.Color(0X35F5FF), opacity: 1 }]
+            side: THREE.DoubleSide,
+            video: () => {
+              const videoElement = document.getElementById('立方体4')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ],
+        [
+          '平面1',
+          {
+            color: new THREE.Color(0xee0ab8),
+            emissive: new THREE.Color(0xee0ab8),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('平面1')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ],
+        [
+          '立方体14',
+          {
+            color: new THREE.Color(0xffff00),
+            emissive: new THREE.Color(0xffff00),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('立方体14')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ],
+        [
+          '立方体15',
+          {
+            color: new THREE.Color(0x35f5ff),
+            emissive: new THREE.Color(0x35f5ff),
+            opacity: 1,
+            video: () => {
+              const videoElement = document.getElementById('立方体15')
+              videoElement.play()
+              const videoTexture = new THREE.VideoTexture(videoElement)
+              videoTexture.flipY = false
+              return new THREE.MeshBasicMaterial({
+                map: videoTexture,
+                side: THREE.DoubleSide
+              })
+            }
+          }
+        ]
       ])
       new GLTFLoader().load('/model/801.gltf', gltf => {
         console.log('gltf: ', gltf)
@@ -117,11 +260,6 @@ export default {
             const material = child.material
             for (const findKey in find) {
               material[findKey] = find[findKey]
-              material[findKey] = find[findKey]
-              material[findKey] = find[findKey]
-            }
-            if (find.texture) {
-              child.material = find.texture
             }
             if (find.video) {
               child.material = find.video()
@@ -142,9 +280,11 @@ export default {
       // controls.autoRotate = true
       // controls.autoRotateSpeed = 1
       // 设置相机距离原点的最远距离
-      controls.minDistance = 5000
+      controls.minDistance = 1
       // 设置相机距离原点的最远距离
-      controls.maxDistance = 50000
+      controls.maxDistance = 100000
+      controls.minPolarAngle = 0
+      controls.maxPolarAngle = 1.2
 
       function createLight (x, y, z, color) {
         const pointLight = new THREE.DirectionalLight(color, 1)
@@ -153,17 +293,63 @@ export default {
       }
 
       const lights = [
-        { x: 0, y: 100000, z: 0 },
-        { x: 10, y: 1.9, z: 4 },
-        { x: -10, y: 1.9, z: 4 },
-        { x: 3, y: 3, z: 3 },
-        { x: 0, y: 100000, z: 0 },
-        { x: 0, y: -100000, z: 0 }
-      ].map(({ x, y, z }) => {
-        return createLight(x, y, z, 0xFFFFFF)
-      }).map(light => {
-        scene.add(light)
+        {
+          x: 58800,
+          y: 46700,
+          z: -51000
+        },
+        {
+          x: -33900,
+          y: 33600,
+          z: 4348
+        },
+        {
+          x: -13000,
+          y: 16000,
+          z: 56000
+        }
+      ].map(({
+        x,
+        y,
+        z
+      }) => {
+        return createLight(x, y, z, 0xffffff)
       })
+        .map(light => {
+          scene.add(light)
+        })
+
+      const directionalLight1 = new THREE.DirectionalLight(0xffffff, 1)
+      directionalLight1.position.set(744, -16000, 6400)
+      scene.add(directionalLight1)
+
+      const directionalLight2 = new THREE.DirectionalLight(0xffffff, 1)
+      directionalLight2.position.set(-290, 28000, -1900)
+      scene.add(directionalLight1)
+      scene.add(directionalLight2)
+      // const water = new Water(renderer, camera, scene, {
+      //   textureWidth: 512,
+      //   textureHeight: 512,
+      //   waterNormals: new THREE.TextureLoader().load('/model/water.gif', texture => {
+      //     texture.wrapS = texture.wrapT = THREE.RepeatWrapping
+      //   }),
+      //   alpha: 1.0,
+      //   sunDirection: new THREE.Vector3(),
+      //   sunColor: 0xffffff,
+      //   waterColor: 0x001e0f,
+      //   distortionScale: 50.0,
+      //   fog: 1
+      // })
+
+      // const mirrorMesh = new THREE.Mesh(
+      //   new THREE.PlaneBufferGeometry(500, 500),
+      //   water.material
+      // )
+      //
+      // mirrorMesh.add(water)
+      // mirrorMesh.rotation.x = -Math.PI * 0.5
+      // scene.add(mirrorMesh)
+
       console.log('lights: ', lights)
       // const light1 = createLight(0, 0, 25)
       // const light2 = createLight(9.625, 1.985, 4.262)
@@ -178,7 +364,7 @@ export default {
       renderer.setSize(window.innerWidth, window.innerHeight)
       renderer.setClearColor(0xFFFFFF)
       document.querySelector('#container').appendChild(renderer.domElement)
-      this.setBackground({ scene })
+      // this.setBackground({ scene })
       // this.helper({ scene, light1 })
       this.start({ scene, camera, controls, renderer })
       this.setMove({ camera })
@@ -229,24 +415,87 @@ export default {
       } = item.position
       this.camera.position.set(x, y, z)
     },
-    handleBtnClick () {
-      const { x, y, z } = this
-      this.camera.position.set(x, y, z)
-      this.camera.updateProjectionMatrix()
-    },
     handleClick ({ renderer, scene, camera }) {
+      const _this = this
       renderer.domElement.addEventListener('click', e => {
         const intersects = getIntersects(e)[0]
-        console.log('intersects: ', intersects.object)
-        // intersects.object.material.color = new THREE.Color(0X35F5FF)
-        // intersects.object.material.emissive = new THREE.Color(0X35F5FF)
-        // intersects.object.material.opacity = 1
-        // const { y } = intersects.object.position
-        // camera.position.y = y
-        // setTimeout(() => {
-        //   alert(`点击了${intersects.object.name}`)
-        // }, 1000)
+        const find = this.videos.find(item => intersects.object.name === item.id)
+        console.log('点击了', intersects.object.name, intersects)
+        if (find) {
+          playVideo(find)
+          return
+        }
+        if (intersects.object.name === '挤压5_1') {
+          // 地面
+          const { x, y, z } = intersects.point
+          console.log('camera.position: ', camera.position.y, x, y, z)
+          const curPosition = this.camera.position
+          const controlsTar = this.controls.target
+          const option = {
+            position: [x + 100, y, z + 100],
+            controls: [x, y, z],
+            duration: 2500,
+            easing: TWEEN.Easing.Cubic.In
+          }
+          option.position = option.position || [curPosition.x, curPosition.y, curPosition.z] // 相机新的位置
+          option.controls = option.controls || [controlsTar.x, controlsTar.y, controlsTar.z] // 控制器新的中心点位置(围绕此点旋转等)
+          option.duration = option.duration || 1000 // 飞行时间
+          option.easing = option.easing || TWEEN.Easing.Linear.None
+          const tween = new TWEEN.Tween({
+            number: 0,
+            x1: curPosition.x, // 相机当前位置x
+            y1: curPosition.y, // 相机当前位置y
+            z1: curPosition.z, // 相机当前位置z
+            x2: controlsTar.x, // 控制当前的中心点x
+            y2: controlsTar.y, // 控制当前的中心点y
+            z2: controlsTar.z // 控制当前的中心点z
+          }).to({
+            number: 1, // 用于 0 - 1 之间取值
+            x1: option.position[0], // 新的相机位置x
+            y1: option.position[1], // 新的相机位置y
+            z1: option.position[2], // 新的相机位置z
+            x2: option.controls[0], // 新的控制中心点位置x
+            y2: option.controls[1], // 新的控制中心点位置x
+            z2: option.controls[2] // 新的控制中心点位置x
+          }, option.duration).easing(option.easing) // TWEEN.Easing.Cubic.InOut //匀速
+          tween.onStart(() => {
+            this.controls.enabled = false
+            console.log('start')
+            // if (option.start instanceof Function) { option.start(tween._object); }
+          })
+          tween.onUpdate(e => {
+            this.controls.enabled = false
+            const x1 = (option.position[0] - curPosition.x) * e + curPosition.x
+            const y1 = (option.position[1] - curPosition.y) * e + curPosition.y
+            const z1 = (option.position[2] - curPosition.z) * e + curPosition.z
+            const x2 = (option.controls[0] - controlsTar.x) * e + controlsTar.x
+            const y2 = (option.controls[1] - controlsTar.y) * e + controlsTar.y
+            const z2 = (option.controls[2] - controlsTar.z) * e
+            this.camera.position.set(x1, y1, z1)
+            this.controls.target.set(x2, y2, z2)
+            this.controls.update()
+          })
+          tween.onComplete(() => {
+            this.controls.enabled = true
+          })
+          console.log('tween: ', tween.start())
+          tween.start()
+          return tween
+        }
+        console.log('intersects: ', intersects)
       })
+
+      function playVideo (find) {
+        console.log('find: ', find)
+        const element = document.querySelector('#videoBox')
+        // element.src = '//commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'
+        element.src = find.fullSrc || find.src
+        _this.currentVideo = find
+        element.play()
+        element.addEventListener('ended', e => {
+          _this.currentVideo = null
+        })
+      }
 
       function getIntersects (event) {
         event.preventDefault()
@@ -303,129 +552,6 @@ export default {
       var texture = textureLoader.load('/model/WechatIMG80.png')
       // 纹理对象Texture赋值给场景对象的背景属性.background
       scene.background = texture
-    },
-    init2 () {
-      const container = document.querySelector('#container')
-      this.scene = new THREE.Scene()
-      // this.setBackground()
-      this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 60, 100000)
-      new GLTFLoader().load('/model/7211.gltf', (gltf) => {
-        this.cameras = gltf.cameras
-        this.cameras.push({
-          position: {
-            x: -289.57681274414097,
-            y: 855.6245117187495,
-            z: -882
-          },
-          name: '自定义'
-        })
-        gltf.scene.traverse(function (child) {
-          if (child.isMesh) {
-            if (child.name === '圆盘') {
-              // if (!child.material.map) {
-              //   child.material.map = {}
-              //   child.material.map.encoding = sRGBEncoding
-              // }
-              // if (!child.material.emissiveMap) {
-              //   child.material.emissiveMap = {}
-              //   child.material.emissiveMap.encoding = sRGBEncoding
-              // }
-              // child.material.needsUpdate = true
-              // var phongMaterial = new THREE.MeshPhongMaterial()
-              // child.material = phongMaterial
-              // child.material.side = THREE.DoubleSide
-              // child.material.envMap = new THREE.TextureLoader().load('/model/DuckCM.png')
-              // child.material.envMap.mapping = THREE.EquirectangularReflectionMapping
-              // child.material.envMap.envMapIntensity = 0.6
-            }
-            // child.material.emissive = child.material.color
-            // child.material.emissiveMap = child.material.map
-          }
-        })
-
-        this.scene.add(gltf.scene)
-        console.log('gltf模型加载成功: ', gltf)
-        // console.log('gltf对象场景属性', gltf.scene)
-        // console.log('gltf对象相机属性', gltf.cameras)
-      }, undefined, function (error) {
-        console.error(error)
-      })
-
-      this.renderer = new THREE.WebGLRenderer({
-        antialias: true,
-        alpha: true
-      })
-      this.renderer.setClearAlpha(0.2)
-      this.renderer.setSize(window.innerWidth, window.innerHeight)
-      this.renderer.setClearColor(0xFFFFFF)
-      // this.renderer.setPixelRatio(window.devicePixelRatio)
-      // this.renderer.gammaOutput = true
-      // this.renderer.gammaFactor = 2.2
-
-      // const pmremGenerator = new THREE.PMREMGenerator(renderer)
-      // pmremGenerator.compileEquirectangularShader()
-      // // eslint-disable-next-line no-unused-expressions
-      // pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture
-      // this.scene.environment = pmremGenerator
-      container.appendChild(this.renderer.domElement)
-      // const ambientLight = new THREE.AmbientLight(0xFFFFFF, 1)
-
-      // this.scene.add(ambientLight) // 环境光
-
-      // const light1 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
-      // light1.position.set(-7, -7, 6.3)
-      // this.scene.add(light1)
-      //
-      // const light2 = new THREE.HemisphereLight(0xffffbb, 0x080820, 1)
-      // this.scene.add(light2)
-      const light = new THREE.DirectionalLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
-      light.position.set(-1, 2, 4)
-      // light.target.position.set(0, 0, 0)
-
-      // const light2 = new THREE.HemisphereLight(0xffffff, 1) // 从正上方（不是位置）照射过来的平行光，0.45的强度
-      // light2.position.set(0, 100, 0)
-      // light2.target.position.set(0, 0, 0)
-      this.setHelp(light)
-      this.scene.add(light)
-      // this.scene.add(light2)
-      // this.scene.add(this.light.target)
-
-      // const lightPoint = new THREE.PointLight(0xE9E9E9, 0.9)
-      // this.scene.add(lightPoint)
-
-      this.controls = new OrbitControls(this.camera, this.renderer.domElement)
-      // controls.enableDamping = true
-      // controls.enableRotate = true
-      // controls.autoRotate = true
-      // controls.rotateSpeed = 1
-      const {
-        x,
-        y,
-        z
-      } = this
-      this.camera.position.set(x, y, z)
-
-      // this.$refs.btn.addEventListener('click', e => {
-      //   console.log('this.camera: ', this.camera)
-      //   const {
-      //     x,
-      //     y,
-      //     z
-      //   } = this
-      //   // this.camera.fov = 10
-      //   this.camera.position.x = x
-      //   this.camera.position.y = y
-      //   this.camera.position.z = z
-      //   console.log('this.camera.fov: ', this.camera.fov)
-      //   this.camera.updateProjectionMatrix()
-      // })
-
-      const animate = () => {
-        this.controls.update()
-        requestAnimationFrame(animate)
-        this.renderer.render(this.scene, this.camera)
-      }
-      animate()
     }
   }
 }
@@ -472,6 +598,24 @@ html, body, #app {
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
+  }
+}
+
+#full {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  video {
+    width: 100%;
   }
 }
 </style>
